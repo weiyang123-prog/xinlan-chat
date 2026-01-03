@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>星澜智能数字人问答系统</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --primary-color:#00ffff;
+      --secondary-color:#0080ff;
+      --bg-dark:#0a0e27;
+      --bg-medium:#1a1a2e;
+      --bg-light:#16213e;
+      --text-primary:#ffffff;
+      --text-secondary:#66d9ff;
+      --border-color:rgba(0,255,255,0.2);
+      --glass-bg:rgba(255,255,255,0.05);
+      --danger:#ff6b6b;
+      --success:#00ff88;
+      --warn:#ffd166;
+      /* 新增：按钮透明度变量，可自定义调整 */
+      --login-btn-opacity: 0.9;
+    }
+    body.light-theme{
+      --primary-color:#0080ff;
+      --secondary-color:#00bfff;
+      --bg-dark:#f0f4f8;
+      --bg-medium:#ffffff;
+      --bg-light:#e8eef5;
+      --text-primary:#1a1a2e;
+      --text-secondary:#4a5568;
+      --border-color:rgba(0,128,255,0.2);
+      --glass-bg:rgba(255,255,255,0.9);
+    }
+    body.purple-theme{
+      --primary-color:#a855f7;
+      --secondary-color:#ec4899;
+      --bg-dark:#1e1b4b;
+      --bg-medium:#2e1065;
+      --bg-light:#4c1d95;
+      --text-primary:#ffffff;
+      --text-secondary:#c4b5fd;
+      --border-color:rgba(168,85,247,0.3);
+      --glass-bg:rgba(139,92,246,0.1);
+    }
+    body{
+      font-family:'Microsoft YaHei','Segoe UI',Arial,sans-serif;
+      background:linear-gradient(135deg,var(--bg-dark) 0%,var(--bg-medium) 50%,var(--bg-light) 100%);
+      min-height:100vh;
+      overflow-x:hidden;
+      position:relative;
+      color:var(--text-primary);
+      transition:all .3s ease;
+    }
+    body::before{
+      content:'';
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background-image:
+        linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+      background-size:50px 50px;
+      pointer-events:none;
+      z-index:0;
+    }
+    .particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+    .particle{position:absolute;background:var(--primary-color);border-radius:50%;opacity:.5;animation:float 15s infinite;}
+    @keyframes float{
+      0%,100%{transform:translateY(0) translateX(0);opacity:0;}
+      10%{opacity:.6;}
+      90%{opacity:.6;}
+      100%{transform:translateY(-100vh) translateX(50px);opacity:0;}
+    }
+    .scan-line{
+      position:fixed;top:0;left:0;width:100%;height:2px;
+      background:linear-gradient(90deg,transparent,var(--primary-color),transparent);
+      opacity:.3;animation:scan 4s linear infinite;pointer-events:none;z-index:0;
+    }
+    @keyframes scan{0%{transform:translateY(0);}100%{transform:translateY(100vh);} }
+    /* ========== 重点美化：登录容器（自定义背景图+布局优化） ========== */
+    .login-container{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      z-index:9999;
+      /* 1. 自定义背景图片：替换url内的地址为你的图片路径（本地/网络图片均可） */
+      background: url("register-bg.jpg") no-repeat center center fixed;
+      background-size: cover;
+      /* 背景叠加渐变，提升文字可读性 */
+      background-blend-mode: overlay;
+      background-color: rgba(0, 0, 0, 0.3);
+      transition: opacity 0.3s ease-out;
+    }
+    /* 登录容器装饰图案：新增角落几何装饰 */
+    .login-container::before,
+    .login-container::after{
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border: 2px solid var(--border-color);
+      border-radius: 20px;
+      z-index: 1;
+      opacity: 0.5;
+      animation: rotateSlow 20s linear infinite;
+    }
+    .login-container::before{
+      top: 50px;
+      left: 50px;
+      border-top-color: var(--primary-color);
+      border-right-color: var(--primary-color);
+    }
+    .login-container::after{
+      bottom: 50px;
+      right: 50px;
+      border-bottom-color: var(--primary-color);
+      border-left-color: var(--primary-color);
+    }
+    @keyframes rotateSlow{
+      0%{transform: rotate(0deg);}
+      100%{transform: rotate(360deg);}
+    }
+    /* 登录盒子：优化内边距、阴影、圆角，增加内部装饰 */
+    .login-box{
+      background:var(--glass-bg);
+      backdrop-filter:blur(20px);
+      border:2px solid var(--border-color);
+      border-radius:30px;
+      padding: 60px 45px; /* 优化内边距，更舒展 */
+      width:480px; /* 微调宽度，更协调 */
+      max-width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,.5), 0 0 100px rgba(0,255,255,.1);
+      animation:slideUp .5s ease-out;
+      position:relative;
+      overflow:hidden;
+      z-index: 2; /* 高于装饰图案 */
+    }
+    .login-box::before{
+      content:'';
+      position:absolute;top:-50%;left:-50%;
+      width:200%;height:200%;
+      background:linear-gradient(45deg,transparent,rgba(0,255,255,0.05),transparent);
+      animation:rotate 6s linear infinite;
+    }
+    @keyframes rotate{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);} }
+    @keyframes slideUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);} }
+    /* 登录logo容器：优化间距 */
+    .logo-container{text-align:center;margin-bottom:45px;position:relative;z-index:1;}
+    .logo{
+      width:120px;height:120px;margin:0 auto 20px;
+      background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      border-radius:30px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      box-shadow:0 10px 30px rgba(0,255,255,.3), 0 0 60px rgba(0,255,255,.2);
+      position:relative;overflow:hidden;
+    }
+    .logo::before{
+      content:'';
+      position:absolute;width:200%;height:200%;
+      background:linear-gradient(45deg,transparent,rgba(255,255,255,.1),transparent);
+      animation:shine 3s infinite;
+    }
+    @keyframes shine{
+      0%{transform:translateX(-100%) translateY(-100%) rotate(45deg);}
+      100%{transform:translateX(100%) translateY(100%) rotate(45deg);}
+    }
+    .logo-text{font-size:28px;font-weight:bold;color:white;z-index:1;text-shadow:0 2px 10px rgba(0,0,0,.3);letter-spacing:2px;}
+    .logo-subtext{font-size:10px;letter-spacing:4px;color:white;opacity:.9;z-index:1;margin-top:5px;}
+    .login-title{font-size:28px;color:var(--primary-color);text-align:center;margin-bottom:10px;font-weight:bold;position:relative;z-index:1;text-shadow:0 0 20px rgba(0,255,255,.5);}
+    .login-subtitle{text-align:center;color:var(--text-secondary);margin-bottom:35px;font-size:14px;position:relative;z-index:1;}
+    .form-group{margin-bottom:25px;position:relative;z-index:1;}
+    .form-group label{display:block;color:var(--text-secondary);margin-bottom:8px;font-size:14px;}
+    .form-group input{
+      width:100%;padding:14px 20px;background:var(--glass-bg);
+      border:1px solid var(--border-color);border-radius:15px;
+      color:var(--text-primary);font-size:14px;transition:all .3s;
+    }
+    .form-group input:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 20px rgba(0,255,255,.3);}
+    /* 2. 登录按钮：调整透明度（可通过var(--login-btn-opacity)自定义）+ 优化样式 */
+    .login-btn{
+      width:100%;padding:16px;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      border:none;border-radius:15px;color:white;font-size:16px;font-weight:bold;cursor:pointer;transition:all .3s;
+      margin-top:20px;position:relative;z-index:1;box-shadow:0 5px 20px rgba(0,255,255,.3);
+      opacity: var(--login-btn-opacity); /* 应用透明度 */
+    }
+    .login-btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 30px rgba(0,255,255,.5);
+      opacity: 1; /* hover时透明度变为1，更醒目 */
+    }
+    .login-footer{text-align:center;margin-top:25px;color:var(--text-secondary);font-size:12px;position:relative;z-index:1;}
+    .app-container{display:none;height:100vh;position:relative;z-index:1;}
+    .app-container.active{display:flex;}
+    .sidebar{
+      width:280px;background:var(--glass-bg);backdrop-filter:blur(20px);
+      border-right:1px solid var(--border-color);display:flex;flex-direction:column;
+      transition:all .3s;box-shadow:5px 0 20px rgba(0,0,0,.2);
+    }
+    .sidebar-header{
+      padding:20px;border-bottom:1px solid var(--border-color);
+      display:flex;align-items:center;gap:15px;position:relative;
+    }
+    .sidebar-header::after{
+      content:'';position:absolute;bottom:0;left:0;width:100%;height:1px;
+      background:linear-gradient(90deg,transparent,var(--primary-color),transparent);
+    }
+    .sidebar-logo{
+      width:50px;height:50px;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      font-size:14px;font-weight:bold;color:white;box-shadow:0 5px 15px rgba(0,255,255,.3);
+    }
+    .sidebar-logo-subtext{font-size:6px;letter-spacing:2px;margin-top:2px;}
+    .sidebar-title{flex:1;}
+    .sidebar-title h2{font-size:16px;color:var(--primary-color);margin-bottom:2px;}
+    .sidebar-title p{font-size:11px;color:var(--text-secondary);}
+    .new-chat-btn{
+      margin:20px;padding:14px;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      border:none;border-radius:12px;color:white;font-size:14px;font-weight:bold;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;
+      box-shadow:0 5px 15px rgba(0,255,255,.3);
+    }
+    .new-chat-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,255,255,.5);}
+    .sidebar-nav{flex:1;overflow-y:auto;padding:10px;}
+    .sidebar-nav::-webkit-scrollbar{width:6px;}
+    .sidebar-nav::-webkit-scrollbar-track{background:transparent;}
+    .sidebar-nav::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:3px;}
+    .nav-section{margin-bottom:20px;}
+    .nav-section-title{
+      padding:10px 15px;color:var(--text-secondary);
+      font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    }
+    .nav-tools{display:flex;gap:8px;}
+    .tiny-btn{
+      padding:6px 10px;border-radius:10px;border:1px solid var(--border-color);
+      background:var(--glass-bg);color:var(--text-secondary);cursor:pointer;font-size:12px;
+      transition:all .25s;
+    }
+    .tiny-btn:hover{border-color:var(--primary-color);color:var(--primary-color);transform:translateY(-1px);}
+    .nav-item{
+      padding:12px 15px;margin:5px 0;background:var(--glass-bg);
+      border:1px solid transparent;border-radius:10px;cursor:pointer;transition:all .3s;
+      display:flex;align-items:center;gap:10px;color:var(--text-secondary);
+    }
+    .nav-item:hover{
+      background:var(--border-color);border-color:var(--primary-color);
+      color:var(--primary-color);transform:translateX(5px);
+    }
+    .nav-item.active{background:var(--border-color);border-color:var(--primary-color);color:var(--primary-color);}
+    .nav-item-icon{font-size:18px;}
+    .nav-item-content{flex:1;min-width:0;}
+    .nav-item-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .nav-item-time{font-size:11px;opacity:.7;}
+    .sidebar-footer{padding:20px;border-top:1px solid var(--border-color);}
+    .user-info{
+      display:flex;align-items:center;gap:12px;padding:12px;background:var(--glass-bg);
+      border-radius:12px;cursor:pointer;transition:all .3s;
+    }
+    .user-info:hover{background:var(--border-color);}
+    .user-avatar{
+      width:40px;height:40px;border-radius:50%;
+      background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      display:flex;align-items:center;justify-content:center;font-size:18px;
+      box-shadow:0 3px 10px rgba(0,255,255,.3);
+    }
+    .user-details{flex:1;}
+    .user-name{font-size:14px;font-weight:bold;color:var(--text-primary);}
+    .user-status{font-size:11px;color:var(--text-secondary);}
+    /* 新增：退出按钮样式 */
+    .logout-btn {
+      width: 100%;
+      margin-top: 15px;
+      padding: 10px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--danger);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .logout-btn:hover {
+      border-color: var(--danger);
+      background: rgba(255, 107, 107, 0.1);
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+    }
+    .main-content{flex:1;display:flex;flex-direction:column;position:relative;}
+    .toolbar{
+      padding:20px 30px;background:var(--glass-bg);backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border-color);
+      display:flex;align-items:center;justify-content:space-between;
+      box-shadow:0 2px 10px rgba(0,0,0,.1);
+    }
+    .toolbar-left{display:flex;align-items:center;gap:20px;}
+    .toolbar-title{font-size:18px;font-weight:bold;color:var(--primary-color);text-shadow:0 0 10px rgba(0,255,255,.5);}
+    .ai-status{
+      display:flex;align-items:center;gap:8px;padding:8px 16px;
+      background:var(--glass-bg);border:1px solid var(--border-color);
+      border-radius:20px;font-size:13px;color:var(--text-secondary);
+    }
+    .ai-status-dot{
+      width:8px;height:8px;border-radius:50%;
+      background:#00ff00;box-shadow:0 0 10px #00ff00;animation:blink 2s infinite;
+    }
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+    .toolbar-right{display:flex;gap:10px;align-items:center;}
+    .icon-btn{
+      width:40px;height:40px;background:var(--glass-bg);
+      border:1px solid var(--border-color);border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:all .3s;font-size:18px;
+    }
+    .icon-btn:hover{
+      background:var(--border-color);border-color:var(--primary-color);
+      color:var(--primary-color);transform:translateY(-2px);
+      box-shadow:0 5px 15px rgba(0,255,255,.3);
+    }
+    .chat-area{
+      flex:1;overflow-y:auto;padding:30px;display:flex;
+      flex-direction:column;gap:20px;
+    }
+    .chat-area::-webkit-scrollbar{width:8px;}
+    .chat-area::-webkit-scrollbar-track{background:var(--glass-bg);border-radius:10px;}
+    .chat-area::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:10px;}
+    .message{display:flex;gap:15px;animation:messageSlide .3s ease-out;}
+    @keyframes messageSlide{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
+    .message.user{flex-direction:row-reverse;}
+    .message-avatar{
+      width:45px;height:45px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;flex-shrink:0;
+      box-shadow:0 5px 15px rgba(0,0,0,.3);
+    }
+    .message.user .message-avatar{background:linear-gradient(135deg,#667eea,#764ba2);}
+    .message.ai .message-avatar{background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));}
+    .message.error .message-avatar{background:linear-gradient(135deg,#ff6b6b,#ee5a6f);}
+    .message-content-wrapper{max-width:70%;}
+    .message.user .message-content-wrapper{display:flex;flex-direction:column;align-items:flex-end;}
+    .message-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+    .message.user .message-header{flex-direction:row-reverse;}
+    .message-sender{font-size:14px;font-weight:bold;color:var(--text-primary);}
+    .message-time{font-size:12px;color:var(--text-secondary);opacity:.7;}
+    .message-content{
+      padding:16px 20px;border-radius:18px;line-height:1.6;font-size:14px;
+      word-wrap:break-word;white-space:pre-wrap;position:relative;
+    }
+    .message.user .message-content{
+      background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+      border-bottom-right-radius:5px;box-shadow:0 5px 15px rgba(102,126,234,.3);
+    }
+    .message.ai .message-content{
+      background:var(--glass-bg);border:1px solid var(--border-color);
+      color:var(--text-primary);border-bottom-left-radius:5px;
+    }
+    .message.error .message-content{
+      background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);
+      color:#ffcccc;border-bottom-left-radius:5px;
+    }
+    .msg-actions{
+      margin-top:8px;display:flex;gap:8px;opacity:.85;
+      justify-content:flex-end;
+    }
+    .msg-btn{
+      padding:6px 10px;font-size:12px;border-radius:10px;
+      border:1px solid var(--border-color);background:var(--glass-bg);
+      color:var(--text-secondary);cursor:pointer;transition:all .2s;
+      user-select:none;
+    }
+    .msg-btn:hover{border-color:var(--primary-color);color:var(--primary-color);transform:translateY(-1px);}
+    .msg-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+    .msg-btn.success:hover{border-color:var(--success);color:var(--success);}
+    .input-area{
+      padding:20px 30px;background:var(--glass-bg);backdrop-filter:blur(20px);
+      border-top:1px solid var(--border-color);box-shadow:0 -2px 10px rgba(0,0,0,.1);
+    }
+    .quick-prompts{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;}
+    .quick-prompt{
+      padding:8px 16px;background:var(--glass-bg);border:1px solid var(--border-color);
+      border-radius:20px;color:var(--text-secondary);font-size:13px;cursor:pointer;transition:all .3s;
+    }
+    .quick-prompt:hover{
+      background:var(--border-color);border-color:var(--primary-color);color:var(--primary-color);
+      transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,255,255,.2);
+    }
+    .input-wrapper{display:flex;gap:15px;align-items:flex-end;}
+    .input-container{flex:1;position:relative;}
+    #messageInput{
+      width:100%;padding:16px 20px;background:var(--glass-bg);
+      border:2px solid var(--border-color);border-radius:20px;
+      color:var(--text-primary);font-size:14px;resize:none;max-height:150px;font-family:inherit;
+    }
+    #messageInput:focus{outline:none;border-color:var(--primary-color);box-shadow:0 0 25px rgba(0,255,255,.3);}
+    #sendBtn{
+      padding:16px 32px;background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));
+      border:none;border-radius:20px;color:white;font-size:14px;font-weight:bold;cursor:pointer;
+      transition:all .3s;white-space:nowrap;box-shadow:0 5px 15px rgba(0,255,255,.3);
+    }
+    #sendBtn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,255,255,.5);}
+    #sendBtn:disabled{opacity:.5;cursor:not-allowed;}
+    .notification{
+      position:fixed;top:20px;right:20px;padding:16px 24px;
+      background:var(--glass-bg);backdrop-filter:blur(20px);
+      border:1px solid var(--border-color);border-radius:12px;color:var(--text-primary);
+      box-shadow:0 10px 30px rgba(0,0,0,.3);
+      z-index:10000;animation:slideIn .3s ease-out;display:none;
+      max-width:520px;
+    }
+    .notification.show{display:block;}
+    .notification.success{border-color:#00ff00;box-shadow:0 10px 30px rgba(0,255,0,.3);}
+    .notification.error{border-color:var(--danger);box-shadow:0 10px 30px rgba(255,107,107,.3);}
+    @keyframes slideIn{from{opacity:0;transform:translateX(100px);}to{opacity:1;transform:translateX(0);} }
+    .modal-mask{
+      position:fixed;inset:0;background:rgba(0,0,0,.45);
+      z-index:2000;display:none;align-items:center;justify-content:center;
+      padding:20px;
+    }
+    .modal-mask.show{display:flex;}
+    .modal{
+      width:720px;max-width:95%;
+      background:var(--bg-medium);border:1px solid var(--border-color);
+      border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    .modal-header{
+      padding:16px 18px;border-bottom:1px solid var(--border-color);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .modal-title{font-weight:bold;color:var(--primary-color);}
+    .modal-close{
+      width:34px;height:34px;border-radius:10px;border:1px solid var(--border-color);
+      background:var(--glass-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    .modal-close:hover{border-color:var(--primary-color);color:var(--primary-color);}
+    .modal-body{padding:16px 18px;color:var(--text-secondary);}
+    .modal-row{display:flex;gap:10px;align-items:center;margin:10px 0;}
+    .modal-row input,.modal-row select{
+      flex:1;padding:10px 12px;border-radius:12px;border:1px solid var(--border-color);
+      background:var(--glass-bg);color:var(--text-primary);
+    }
+    .modal-row button{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--border-color);
+      background:var(--glass-bg);color:var(--text-secondary);cursor:pointer;
+    }
+    .modal-row button:hover{border-color:var(--primary-color);color:var(--primary-color);}
+    .modal-list{
+      margin-top:12px;border:1px solid var(--border-color);border-radius:12px;
+      max-height:360px;overflow:auto;
+    }
+    .modal-item{
+      padding:10px 12px;border-bottom:1px solid var(--border-color);
+      display:flex;gap:10px;align-items:flex-start;
+    }
+    .modal-item:last-child{border-bottom:none;}
+    .tag{
+      padding:4px 8px;border-radius:999px;border:1px solid var(--border-color);
+      font-size:12px;color:var(--text-secondary);
+      white-space:nowrap;
+    }
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    @media (max-width:968px){
+      .sidebar{position:fixed;left:-280px;height:100%;z-index:999;}
+      .sidebar.active{left:0;}
+      .toolbar-left{flex-direction:column;align-items:flex-start;gap:10px;}
+      .message-content-wrapper{max-width:85%;}
+      .quick-prompts{overflow-x:auto;flex-wrap:nowrap;}
+      /* 移动端适配登录容器装饰 */
+      .login-container::before,
+      .login-container::after{
+        width: 120px;
+        height: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+  <div class="scan-line" id="scanLine"></div>
+  <div class="login-container" id="loginContainer">
+    <div class="login-box">
+      <div class="logo-container">
+        <div class="logo">
+          <div class="logo-text">星澜</div>
+          <div class="logo-subtext">XINGLAN AI</div>
+        </div>
+      </div>
+      <h1 class="login-title">系统验证</h1>
+      <p class="login-subtitle">请输入登录密钥以访问星澜智能问答系统</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="accessKey">🔑 登录密钥</label>
+          <input type="password" id="accessKey" placeholder="请输入密钥" required>
+        </div>
+        <button type="submit" class="login-btn">验证并登录</button>
+      </form>
+      <div class="login-footer">© 2025 星澜智能科技 版权所有</div>
+    </div>
+  </div>
+  <div class="app-container" id="appContainer">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div>星澜</div>
+          <div class="sidebar-logo-subtext">XINGLAN</div>
+        </div>
+        <div class="sidebar-title">
+          <h2>智能问答</h2>
+          <p>AI助手</p>
+        </div>
+      </div>
+      <button class="new-chat-btn" id="newChatBtn">
+        <span>➕</span><span>新建对话</span>
+      </button>
+      <div class="sidebar-nav" id="sidebarNav">
+        <div class="nav-section">
+          <div class="nav-section-title">
+            <span>最近对话</span>
+            <span class="nav-tools">
+              <button class="tiny-btn" id="openSearchBtn" title="搜索对话/消息">🔎</button>
+              <button class="tiny-btn" id="openStarredBtn" title="收藏夹">⭐</button>
+            </span>
+          </div>
+          <div class="nav-item active" id="navDefaultItem">
+            <span class="nav-item-icon">💬</span>
+            <div class="nav-item-content">
+              <div class="nav-item-title" id="conversationTitle">新对话</div>
+              <div class="nav-item-time" id="conversationTime">刚刚</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="user-info" id="userInfo">
+          <div class="user-avatar">🔐</div>
+          <div class="user-details">
+            <div class="user-name" id="userName">已认证用户</div>
+            <div class="user-status">在线</div>
+          </div>
+        </div>
+        <!-- 新增：退出登录按钮 -->
+        <button id="logoutBtn" class="logout-btn">🚪 退出登录</button>
+      </div>
+    </div>
+    <div class="main-content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="toolbar-title" id="toolbarTitle">星澜智能助手</div>
+          <div class="ai-status">
+            <span class="ai-status-dot"></span>
+            <span id="aiReadyText">星澜AI 已就绪</span>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <div class="icon-btn" id="exportBtn" title="导出对话">📤</div>
+          <div class="icon-btn" id="maskBtn" title="敏感信息遮罩">🕶️</div>
+          <div class="icon-btn" id="clearBtn" title="清空对话">🗑️</div>
+          <div class="icon-btn" id="settingsBtn" title="设置">⚙️</div>
+        </div>
+      </div>
+      <div class="chat-area" id="chatArea">
+        <div class="welcome-screen" id="welcomeScreen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px;">
+          <div style="font-size:80px;margin-bottom:30px;filter:drop-shadow(0 0 20px rgba(0,255,255,.5));">🤖</div>
+          <h1 style="font-size:32px;color:var(--primary-color);margin-bottom:15px;font-weight:bold;text-shadow:0 0 20px rgba(0,255,255,.5);">
+            您好！我是星澜智能助手
+          </h1>
+          <p style="font-size:16px;color:var(--text-secondary);margin-bottom:40px;max-width:600px;line-height:1.6;">
+            基于大模型能力，为您提供智能、高效、专业的问答服务。<br>
+            输入问题，或使用命令：<span class="mono">/help</span> 查看更多玩法。
+          </p>
+        </div>
+      </div>
+      <div class="input-area">
+        <div class="quick-prompts">
+          <div class="quick-prompt">介绍一下你自己</div>
+          <div class="quick-prompt">你能帮我做什么？</div>
+          <div class="quick-prompt">讲个有趣的故事</div>
+          <div class="quick-prompt">写一首诗</div>
+          <div class="quick-prompt">/faq</div>
+          <div class="quick-prompt">/help</div>
+        </div>
+        <div class="input-wrapper">
+          <div class="input-container">
+            <textarea id="messageInput" placeholder="输入您的问题... (Enter发送，Shift+Enter换行)" rows="1"></textarea>
+          </div>
+          <button id="sendBtn">发送</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-mask" id="searchModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">🔎 搜索消息</div>
+        <div class="modal-close" data-close="searchModal">✕</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <input id="searchInput" placeholder="输入关键词（支持正则：/pattern/）"/>
+          <button id="searchGoBtn">搜索</button>
+        </div>
+        <div class="modal-list" id="searchResultList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-mask" id="starModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">⭐ 收藏夹</div>
+        <div class="modal-close" data-close="starModal">✕</div>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:13px;opacity:.9;">双击消息复制；点击“⭐收藏/📌置顶”后会出现在这里。</div>
+        <div class="modal-list" id="starList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-mask" id="exportModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">📤 导出对话</div>
+        <div class="modal-close" data-close="exportModal">✕</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <select id="exportFormat">
+            <option value="json">JSON（结构化）</option>
+            <option value="md">Markdown（可读）</option>
+            <option value="txt">纯文本</option>
+          </select>
+          <button id="exportDownloadBtn">下载</button>
+        </div>
+        <div style="font-size:12px;opacity:.8;line-height:1.6;margin-top:8px;">
+          提示：Markdown 适合发给别人或存档；JSON 适合二次处理。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-mask" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ 系统设置</div>
+        <div class="modal-close" data-close="settingsModal">✕</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <select id="themeSelect">
+            <option value="dark">深邃蓝（dark）</option>
+            <option value="light">清新白（light）</option>
+            <option value="purple">梦幻紫（purple）</option>
+          </select>
+          <button id="saveSettingsBtn">保存</button>
+        </div>
+        <div class="modal-row">
+          <label style="min-width:110px;">创造性</label>
+          <input id="temperature" type="range" min="0" max="1" step="0.1" value="0.7"/>
+          <span class="tag" id="temperatureValue">0.7</span>
+        </div>
+        <div class="modal-row">
+          <label style="min-width:110px;">最大长度</label>
+          <input id="maxTokens" type="range" min="500" max="4000" step="100" value="2000"/>
+          <span class="tag" id="maxTokensValue">2000</span>
+        </div>
+        <div class="modal-row">
+          <label style="min-width:110px;">打字速度</label>
+          <input id="typingSpeed" type="range" min="10" max="100" step="5" value="30"/>
+          <span class="tag" id="typingSpeedValue">30ms</span>
+        </div>
+        <div style="margin-top:12px;font-size:12px;opacity:.85;line-height:1.6;">
+          新增：<span class="mono">/mask on|off</span> 可遮罩手机号/邮箱/身份证样式字符串；<span class="mono">/faq</span> 查看内置FAQ。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="notification" id="notification"></div>
+  <script>
+const CONFIG = {
+  API_KEY: 'f24dd041108b47cfab307fb42d2dea2d.rdCpvxs0JPkx0fT4',
+  API_URL: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  MODEL: 'glm-4',
+  DEFAULT_TEMPERATURE: 0.7,
+  DEFAULT_MAX_TOKENS: 2000,
+  CORRECT_KEY: 'abc123456',
+  PRESET_ANSWER:
+    '我是【星澜智能助手】（星澜AI），你的贴心小管家，可以回答你的各种问题、提供写作/总结/方案/代码建议等帮助。'
+};
+let conversationHistory = [];
+let currentUser = null;
+let starredMessages = [];
+let isProcessing = false;
+let settings = {
+  theme: 'dark',
+  temperature: CONFIG.DEFAULT_TEMPERATURE,
+  maxTokens: CONFIG.DEFAULT_MAX_TOKENS,
+  typingSpeed: 30,
+  showTimestamp: true,
+  enableSound: true,
+  autoScroll: true,
+  fontSize: 14,
+  enableParticles: true,
+  enableScanLine: true,
+  enableTypingEffect: true,
+  performanceMode: 'balanced',
+  maskSensitive: false
+};
+const loginContainer = document.getElementById('loginContainer');
+const appContainer   = document.getElementById('appContainer');
+const loginForm      = document.getElementById('loginForm');
+const chatArea       = document.getElementById('chatArea');
+const welcomeScreen  = document.getElementById('welcomeScreen');
+const messageInput   = document.getElementById('messageInput');
+const sendBtn        = document.getElementById('sendBtn');
+const newChatBtn     = document.getElementById('newChatBtn');
+const clearBtn       = document.getElementById('clearBtn');
+const logoutBtn      = document.getElementById('logoutBtn'); // 新增
+const userName       = document.getElementById('userName');
+const exportBtn = document.getElementById('exportBtn');
+const maskBtn   = document.getElementById('maskBtn');
+const searchModal   = document.getElementById('searchModal');
+const starModal     = document.getElementById('starModal');
+const exportModal   = document.getElementById('exportModal');
+const settingsModal = document.getElementById('settingsModal');
+const openSearchBtn  = document.getElementById('openSearchBtn');
+const openStarredBtn = document.getElementById('openStarredBtn');
+const themeSelect      = document.getElementById('themeSelect');
+const temperatureRange = document.getElementById('temperature');
+const maxTokensRange   = document.getElementById('maxTokens');
+const typingSpeedRange = document.getElementById('typingSpeed');
+const temperatureValue = document.getElementById('temperatureValue');
+const maxTokensValue   = document.getElementById('maxTokensValue');
+const typingSpeedValue = document.getElementById('typingSpeedValue');
+
+// 初始化性能优化设置
+function optimizePerformance() {
+  // 减少重绘和回流
+  chatArea.style.contain = 'strict';
+  
+  // 禁用不必要的动画以提高响应速度
+  if (settings.performanceMode === 'high') {
+    document.documentElement.style.setProperty('--animate-duration', '0.1s');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  optimizePerformance();
+  initParticles();
+  initEventListeners();
+  loadSettings();
+  initExtraModules();
+  
+  // 预加载可能需要的资源
+  preloadResources();
+});
+
+// 预加载资源
+function preloadResources() {
+  // 可以在这里预加载任何可能需要的资源
+}
+
+function initParticles(){
+  if (!settings.enableParticles) return;
+  
+  const particlesContainer = document.getElementById('particles');
+  particlesContainer.innerHTML = '';
+  
+  // 使用requestAnimationFrame优化粒子创建
+  let count = 0;
+  const totalParticles = 30;
+  
+  function createParticle() {
+    if (count >= totalParticles) return;
+    
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.width = (Math.random() * 5 + 2) + 'px';
+    p.style.height = p.style.width;
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.animationDelay = (Math.random() * 15) + 's';
+    p.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    particlesContainer.appendChild(p);
+    
+    count++;
+    requestAnimationFrame(createParticle);
+  }
+  
+  requestAnimationFrame(createParticle);
+}
+
+function initEventListeners(){
+  loginForm.addEventListener('submit', handleLogin);
+  sendBtn.addEventListener('click', sendMessage);
+  
+  // 修改为Enter发送，Shift+Enter换行
+  messageInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  
+  messageInput.addEventListener('input', () => {
+    // 优化输入框高度调整，减少布局计算
+    const currentHeight = messageInput.style.height;
+    messageInput.style.height = 'auto';
+    const newHeight = messageInput.scrollHeight + 'px';
+    if (currentHeight !== newHeight) {
+      messageInput.style.height = newHeight;
+    }
+  });
+  
+  newChatBtn.addEventListener('click', newConversation);
+  clearBtn.addEventListener('click', () => {
+    if(confirm('确定要清空当前对话吗？')) newConversation();
+  });
+  
+  // 新增：退出登录事件监听
+  logoutBtn.addEventListener('click', handleLogout);
+  
+  document.querySelectorAll('.quick-prompt').forEach(p => {
+    p.addEventListener('click', () => {
+      messageInput.value = p.textContent;
+      messageInput.focus();
+    });
+  });
+  
+  openSearchBtn.addEventListener('click', () => openModal(searchModal));
+  openStarredBtn.addEventListener('click', () => openModal(starModal));
+  exportBtn.addEventListener('click', () => openModal(exportModal));
+  
+  maskBtn.addEventListener('click', () => {
+    settings.maskSensitive = !settings.maskSensitive;
+    showNotification(settings.maskSensitive ? '已开启敏感信息遮罩' : '已关闭敏感信息遮罩', 'success');
+    saveSettings();
+  });
+  
+  document.getElementById('settingsBtn').addEventListener('click', () => openModal(settingsModal));
+  document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+    saveSettings();
+    showNotification('设置已保存', 'success');
+    closeModal(settingsModal);
+  });
+  
+  document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-close');
+      closeModal(document.getElementById(id));
+    });
+  });
+  
+  document.getElementById('searchGoBtn').addEventListener('click', () => searchMessages());
+  document.getElementById('exportDownloadBtn').addEventListener('click', () => exportConversation());
+  
+  themeSelect.addEventListener('change', (e)=>switchTheme(e.target.value));
+  temperatureRange.addEventListener('input', (e)=>{
+    settings.temperature=parseFloat(e.target.value);
+    temperatureValue.textContent=e.target.value;
+  });
+  maxTokensRange.addEventListener('input', (e)=>{
+    settings.maxTokens=parseInt(e.target.value);
+    maxTokensValue.textContent=e.target.value;
+  });
+  typingSpeedRange.addEventListener('input', (e)=>{
+    settings.typingSpeed=parseInt(e.target.value);
+    typingSpeedValue.textContent=e.target.value + 'ms';
+  });
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const accessKey = document.getElementById('accessKey').value;
+  
+  if (accessKey === CONFIG.CORRECT_KEY) {
+    currentUser = { name: '用户', avatar: '👤' };
+    userName.textContent = '已认证用户';
+    
+    // 使用requestAnimationFrame优化登录过渡动画
+    requestAnimationFrame(() => {
+      loginContainer.style.opacity = '0';
+      loginContainer.style.transition = 'opacity 0.3s ease-out';
+      
+      setTimeout(() => {
+        loginContainer.style.display = 'none';
+        appContainer.classList.add('active');
+        showNotification('登录成功，欢迎使用星澜智能助手', 'success');
+      }, 300);
+    });
+  } else {
+    showNotification('密钥错误，请重新输入', 'error');
+  }
+}
+
+// 新增：处理退出登录
+function handleLogout() {
+  // 确认提示（可选，如果需要更平滑体验可去掉）
+  if(confirm('确定要退出登录吗？')) {
+    // 隐藏应用界面
+    appContainer.classList.remove('active');
+    
+    // 显示登录界面
+    loginContainer.style.display = 'flex';
+    // 使用 requestAnimationFrame 确保 display: flex 生效后再改变 opacity，实现渐入效果
+    requestAnimationFrame(() => {
+      loginContainer.style.opacity = '1';
+    });
+    
+    // 重置状态
+    currentUser = null;
+    isProcessing = false;
+    
+    // 清空密钥输入框（安全起见）
+    document.getElementById('accessKey').value = '';
+    
+    // 重置对话状态（可选，看需求，一般退出会清空当前会话）
+    newConversation();
+    
+    showNotification('已退出登录', 'success');
+  }
+}
+
+function sendMessage() {
+  const message = messageInput.value.trim();
+  if (!message || isProcessing) return;
+  
+  // 立即清空输入框，提升响应感
+  messageInput.value = '';
+  messageInput.style.height = 'auto';
+  
+  if (welcomeScreen) {
+    welcomeScreen.remove();
+  }
+  
+  const maskedMessage = settings.maskSensitive ? maskSensitiveInfo(message) : message;
+  addMessage('user', currentUser ? currentUser.name : '用户', maskedMessage);
+  
+  conversationHistory.push({
+    role: 'user',
+    content: message,
+    timestamp: new Date().toISOString()
+  });
+  
+  // 命令处理优先，避免API调用延迟
+  if (message.startsWith('/')) {
+    handleCommand(message);
+    return;
+  }
+  
+  // 立即更新UI状态
+  isProcessing = true;
+  sendBtn.disabled = true;
+  document.getElementById('aiReadyText').textContent = '星澜AI 正在思考...';
+  
+  // 使用setTimeout将API调用放入下一个事件循环，避免阻塞UI
+  setTimeout(() => {
+    callAI(message).then(aiResponse => {
+      const maskedResponse = settings.maskSensitive ? maskSensitiveInfo(aiResponse) : aiResponse;
+      addMessageWithTyping('ai', '星澜AI', maskedResponse, () => {
+        conversationHistory.push({
+          role: 'assistant',
+          content: aiResponse,
+          timestamp: new Date().toISOString()
+        });
+        isProcessing = false;
+        sendBtn.disabled = false;
+        document.getElementById('aiReadyText').textContent = '星澜AI 已就绪';
+      });
+    }).catch(error => {
+      addMessageWithTyping('error', '星澜AI', '服务错误，请稍后再试。', () => {
+        isProcessing = false;
+        sendBtn.disabled = false;
+        document.getElementById('aiReadyText').textContent = '星澜AI 已就绪';
+      });
+    });
+  }, 0);
+}
+
+// 优化API调用函数
+function callAI(userMessage) {
+  return new Promise((resolve, reject) => {
+    const messageHistory = conversationHistory.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content
+    }));
+    messageHistory.push({ role: "user", content: userMessage });
+    
+    // 使用AbortController处理超时和取消
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+    
+    fetch(CONFIG.API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.API_KEY}`
+      },
+      body: JSON.stringify({
+        model: CONFIG.MODEL,
+        messages: messageHistory,
+        temperature: settings.temperature,
+        max_tokens: settings.maxTokens
+      }),
+      signal: controller.signal
+    })
+    .then(response => {
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('API请求失败');
+      return response.json();
+    })
+    .then(data => {
+      if (data.choices && data.choices.length > 0) {
+        resolve(data.choices[0].message.content);
+      } else {
+        resolve(CONFIG.PRESET_ANSWER);
+      }
+    })
+    .catch(error => {
+      clearTimeout(timeoutId);
+      console.error('API调用错误:', error);
+      reject(error);
+    });
+  });
+}
+
+// 添加消息时使用文档片段减少DOM操作
+function addMessage(role, sender, content) {
+  const fragment = document.createDocumentFragment();
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${role}`;
+  
+  const now = new Date();
+  const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  
+  messageDiv.innerHTML = `
+    <div class="message-avatar">${role === 'user' ? '👤' : role === 'ai' ? '🤖' : '⚠️'}</div>
+    <div class="message-content-wrapper">
+      <div class="message-header">
+        <div class="message-sender">${sender}</div>
+        <div class="message-time">${timeString}</div>
+      </div>
+      <div class="message-content">${content}</div>
+      <div class="msg-actions">
+        <div class="msg-btn" onclick="copyMessage(this)">复制</div>
+        <div class="msg-btn" onclick="starMessage(this)">⭐收藏</div>
+      </div>
+    </div>
+  `;
+  
+  fragment.appendChild(messageDiv);
+  chatArea.appendChild(fragment);
+  
+  // 使用requestAnimationFrame优化滚动性能
+  if (settings.autoScroll) {
+    requestAnimationFrame(() => {
+      chatArea.scrollTop = chatArea.scrollHeight;
+    });
+  }
+}
+
+// 打字效果优化
+function addMessageWithTyping(role, sender, content, callback) {
+  const fragment = document.createDocumentFragment();
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${role}`;
+  
+  const now = new Date();
+  const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  
+  messageDiv.innerHTML = `
+    <div class="message-avatar">${role === 'user' ? '👤' : role === 'ai' ? '🤖' : '⚠️'}</div>
+    <div class="message-content-wrapper">
+      <div class="message-header">
+        <div class="message-sender">${sender}</div>
+        <div class="message-time">${timeString}</div>
+      </div>
+      <div class="message-content"></div>
+      <div class="msg-actions">
+        <div class="msg-btn" onclick="copyMessage(this)">复制</div>
+        <div class="msg-btn" onclick="starMessage(this)">⭐收藏</div>
+      </div>
+    </div>
+  `;
+  
+  fragment.appendChild(messageDiv);
+  chatArea.appendChild(fragment);
+  
+  const contentDiv = messageDiv.querySelector('.message-content');
+  let index = 0;
+  
+  // 使用requestAnimationFrame优化打字动画
+  function typeChar() {
+    if (index < content.length) {
+      contentDiv.textContent += content.charAt(index);
+      index++;
+      
+      // 自动滚动优化
+      if (settings.autoScroll) {
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }
+      
+      // 根据字符调整延迟，提升打字体验
+      const delay = content.charAt(index) === '\n' ? settings.typingSpeed * 5 : settings.typingSpeed;
+      setTimeout(() => requestAnimationFrame(typeChar), delay);
+    } else {
+      if (callback) callback();
+    }
+  }
+  
+  requestAnimationFrame(typeChar);
+}
+
+// 其他必要函数实现
+function newConversation() {
+  conversationHistory = [];
+  chatArea.innerHTML = '';
+  chatArea.appendChild(welcomeScreen);
+  document.getElementById('conversationTitle').textContent = '新对话';
+  document.getElementById('conversationTime').textContent = '刚刚';
+}
+
+function showNotification(message, type = '') {
+  const notification = document.getElementById('notification');
+  notification.textContent = message;
+  notification.className = 'notification';
+  if (type) notification.classList.add(type);
+  
+  notification.classList.add('show');
+  
+  // 使用requestAnimationFrame优化动画
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 3000);
+  });
+}
+
+function openModal(modal) {
+  modal.classList.add('show');
+}
+
+function closeModal(modal) {
+  modal.classList.remove('show');
+}
+
+function switchTheme(theme) {
+  document.body.className = '';
+  if (theme) document.body.classList.add(`${theme}-theme`);
+  settings.theme = theme;
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem('ai_chat_settings', JSON.stringify(settings));
+  } catch (e) {
+    console.error('保存设置失败:', e);
+  }
+}
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem('ai_chat_settings');
+    if (saved) {
+      settings = JSON.parse(saved);
+      themeSelect.value = settings.theme || 'dark';
+      temperatureRange.value = settings.temperature || CONFIG.DEFAULT_TEMPERATURE;
+      maxTokensRange.value = settings.maxTokens || CONFIG.DEFAULT_MAX_TOKENS;
+      typingSpeedRange.value = settings.typingSpeed || 30;
+      
+      temperatureValue.textContent = settings.temperature;
+      maxTokensValue.textContent = settings.maxTokens;
+      typingSpeedValue.textContent = settings.typingSpeed + 'ms';
+      
+      switchTheme(settings.theme);
+    }
+  } catch (e) {
+    console.error('加载设置失败:', e);
+  }
+}
+
+function maskSensitiveInfo(text) {
+  // 简单的敏感信息遮罩实现
+  let masked = text;
+  
+  // 手机号遮罩
+  masked = masked.replace(/1[3-9]\d{9}/g, '1xxxxxxxxx');
+  
+  // 邮箱遮罩
+  masked = masked.replace(/(\w+)(@\w+\.\w+)/g, (match, p1, p2) => {
+    if (p1.length > 3) return p1.substring(0, 3) + '***' + p2;
+    return p1 + '***' + p2;
+  });
+  
+  // 身份证号遮罩
+  masked = masked.replace(/\d{17}[\dXx]/g, 'xxxxxxxxxxxxxxxxx');
+  
+  return masked;
+}
+
+function copyMessage(btn) {
+  const content = btn.closest('.message-content-wrapper').querySelector('.message-content').textContent;
+  navigator.clipboard.writeText(content).then(() => {
+    const originalText = btn.textContent;
+    btn.textContent = '已复制';
+    setTimeout(() => {
+      btn.textContent = originalText;
+    }, 2000);
+  });
+}
+
+function starMessage(btn) {
+  const content = btn.closest('.message-content-wrapper').querySelector('.message-content').textContent;
+  const isStarred = btn.textContent.includes('已收藏');
+  
+  if (isStarred) {
+    starredMessages = starredMessages.filter(m => m !== content);
+    btn.textContent = '⭐收藏';
+  } else {
+    starredMessages.push(content);
+    btn.textContent = '✓已收藏';
+  }
+}
+
+function searchMessages() {
+  const query = document.getElementById('searchInput').value.trim();
+  const resultList = document.getElementById('searchResultList');
+  resultList.innerHTML = '';
+  
+  if (!query) return;
+  
+  let results = [];
+  
+  // 简单搜索实现
+  conversationHistory.forEach((msg, index) => {
+    if (msg.content.includes(query)) {
+      results.push({
+        index,
+        ...msg
+      });
+    }
+  });
+  
+  if (results.length === 0) {
+    resultList.innerHTML = '<div style="padding:15px;text-align:center;">未找到匹配结果</div>';
+    return;
+  }
+  
+  results.forEach(result => {
+    const item = document.createElement('div');
+    item.className = 'modal-item';
+    item.innerHTML = `
+      <div style="min-width:60px;">${result.role === 'user' ? '👤' : '🤖'}</div>
+      <div style="flex:1;word-break:break-all;">${result.content.substring(0, 100)}${result.content.length > 100 ? '...' : ''}</div>
+    `;
+    resultList.appendChild(item);
+  });
+}
+
+function exportConversation() {
+  const format = document.getElementById('exportFormat').value;
+  let content = '';
+  const fileName = `星澜AI对话_${new Date().toLocaleDateString().replace(/\//g, '-')}`;
+  
+  switch (format) {
+    case 'json':
+      content = JSON.stringify(conversationHistory, null, 2);
+      downloadFile(fileName + '.json', content, 'application/json');
+      break;
+    case 'md':
+      content = '# 星澜AI对话记录\n\n';
+      conversationHistory.forEach(msg => {
+        content += `## ${msg.role === 'user' ? '用户' : '星澜AI'}\n`;
+        content += `${msg.content}\n\n`;
+      });
+      downloadFile(fileName + '.md', content, 'text/markdown');
+      break;
+    case 'txt':
+      content = '星澜AI对话记录\n';
+      content += '==================\n\n';
+      conversationHistory.forEach(msg => {
+        content += `${msg.role === 'user' ? '用户' : '星澜AI'}: ${msg.content}\n\n`;
+      });
+      downloadFile(fileName + '.txt', content, 'text/plain');
+      break;
+  }
+  
+  closeModal(exportModal);
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  
+  // 清理
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
+function handleCommand(command) {
+  let response = '';
+  
+  switch (command.toLowerCase()) {
+    case '/help':
+      response = `可用命令：
+- /help：显示帮助信息
+- /faq：显示常见问题
+- /mask on|off：开启/关闭敏感信息遮罩
+- /clear：清空当前对话
+- /theme 主题名：切换主题（dark/light/purple）`;
+      break;
+    case '/faq':
+      response = `常见问题：
+1. 如何导出对话？点击顶部工具栏的📤图标
+2. 如何收藏消息？每条消息下方有点⭐收藏按钮
+3. 如何切换主题？点击⚙️设置按钮选择主题
+4. 如何遮罩敏感信息？点击🕶️图标或使用/mask命令`;
+      break;
+    case '/clear':
+      newConversation();
+      return;
+    default:
+      if (command.startsWith('/mask')) {
+        const parts = command.split(' ');
+        if (parts.length > 1) {
+          settings.maskSensitive = parts[1].toLowerCase() === 'on';
+          saveSettings();
+          response = settings.maskSensitive ? '已开启敏感信息遮罩' : '已关闭敏感信息遮罩';
+        } else {
+          response = `当前敏感信息遮罩：${settings.maskSensitive ? '开启' : '关闭'}\n使用/mask on|off切换`;
+        }
+      } else if (command.startsWith('/theme')) {
+        const parts = command.split(' ');
+        if (parts.length > 1 && ['dark', 'light', 'purple'].includes(parts[1])) {
+          switchTheme(parts[1]);
+          saveSettings();
+          response = `已切换到${parts[1]}主题`;
+        } else {
+          response = `当前主题：${settings.theme}\n可用主题：dark, light, purple\n使用/theme 主题名切换`;
+        }
+      } else {
+        response = `未知命令：${command}\n输入/help查看可用命令`;
+      }
+  }
+  
+  const maskedResponse = settings.maskSensitive ? maskSensitiveInfo(response) : response;
+  addMessageWithTyping('ai', '星澜AI', maskedResponse, () => {
+    conversationHistory.push({
+      role: 'assistant',
+      content: response,
+      timestamp: new Date().toISOString()
+    });
+    isProcessing = false;
+    sendBtn.disabled = false;
+  });
+}
+
+function initExtraModules() {
+  // 可以初始化其他额外模块
+}
+  </script>
+</body>
+</html>
